@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Kontrol & Monitoring Energi</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-color: #030712;
+            --card-bg: rgba(17, 24, 39, 0.85);
+            --primary: #3b82f6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --purple: #a855f7;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 40%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 440px;
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 32px;
+            padding: 30px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            position: relative;
+        }
+
+        /* Network Status */
+        .network-badge {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            font-size: 10px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .header-section {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .header-section h1 {
+            font-size: 1.4rem;
+            color: white;
+            letter-spacing: -0.5px;
+        }
+
+        /* Mode Selector (Manual vs Otomatis) */
+        .mode-selector {
+            display: flex;
+            background: rgba(15, 23, 42, 0.8);
+            padding: 5px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: 12px;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .mode-btn.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        /* Monitoring Tegangan & Baterai */
+        .monitor-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .monitor-item {
+            background: rgba(15, 23, 42, 0.5);
+            padding: 15px;
+            border-radius: 20px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Seksi Beban (Load Monitoring) */
+        .load-section {
+            background: rgba(15, 23, 42, 0.7);
+            padding: 15px;
+            border-radius: 24px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .load-header {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .load-stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+        }
+
+        .load-mini-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px 5px;
+            border-radius: 12px;
+        }
+
+        .load-val {
+            font-size: 1rem;
+            font-weight: 800;
+            color: white;
+        }
+
+        .load-lbl {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .battery-visual {
+            width: 50px;
+            height: 25px;
+            border: 2px solid #4b5563;
+            border-radius: 4px;
+            margin: 0 auto 10px;
+            position: relative;
+            padding: 2px;
+        }
+
+        .battery-visual::after {
+            content: '';
+            position: absolute;
+            right: -6px;
+            top: 6px;
+            width: 4px;
+            height: 10px;
+            background: #4b5563;
+            border-radius: 0 2px 2px 0;
+        }
+
+        .battery-level-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 1px;
+            transition: all 1s ease-in-out;
+        }
+
+        .value-large {
+            font-size: 1.2rem;
+            font-weight: 800;
+            display: block;
+        }
+
+        .label-small {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        /* Power Source Selector */
+        .source-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .source-btn {
+            background: rgba(31, 41, 55, 0.5);
+            border: 2px solid transparent;
+            border-radius: 18px;
+            padding: 12px;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .source-btn span { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); }
+        .source-btn i { color: var(--text-muted); width: 18px; }
+
+        .source-btn.active {
+            border-color: var(--warning);
+            background: rgba(245, 158, 11, 0.1);
+        }
+        .source-btn.active span, .source-btn.active i { color: var(--warning); }
+
+        /* Lamp Visualizer */
+        .bulb-area {
+            height: 120px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            margin-bottom: 25px;
+        }
+
+        .aura {
+            position: absolute;
+            width: 90px;
+            height: 90px;
+            background: var(--warning);
+            border-radius: 50%;
+            filter: blur(45px);
+            opacity: 0;
+            transition: 0.5s;
+        }
+
+        .bulb-icon { color: #374151; transition: 0.4s; z-index: 2; }
+        .active-bulb { color: var(--warning); transform: scale(1.1); }
+        .active-aura { opacity: 0.4; }
+
+        /* Action Buttons */
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .btn {
+            border: none;
+            padding: 15px;
+            border-radius: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+
+        .btn-on { background: var(--success); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2); }
+        .btn-off { background: var(--danger); box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2); }
+        
+        .btn:disabled {
+            background: #1f2937;
+            color: #4b5563;
+            box-shadow: none;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
+        .btn:active:not(:disabled) { transform: scale(0.95); }
+
+        .footer {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            text-align: center;
+        }
+
+        #log-status { font-size: 0.75rem; color: var(--text-muted); }
+        
+        .auto-badge {
+            font-size: 0.65rem;
+            color: var(--primary);
+            font-weight: bold;
+            display: none;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <div class="glass-card">
+            <div class="network-badge">
+                <div id="net-dot" style="width:6px; height:6px; background:var(--danger); border-radius:50%"></div>
+                <span id="net-text">OFFLINE</span>
+            </div>
+
+            <div class="header-section">
+                <h1>Smart Energy Monitor</h1>
+                <p style="color: var(--text-muted); font-size: 0.75rem;">Sistem Kontrol Terpadu</p>
+            </div>
+
+            <div class="mode-selector">
+                <button id="mode-manual" class="mode-btn active" onclick="updateFirebase('kontrol_mode', 'manual')">
+                    <i data-lucide="hand"></i> Manual
+                </button>
+                <button id="mode-otomatis" class="mode-btn" onclick="updateFirebase('kontrol_mode', 'otomatis')">
+                    <i data-lucide="cpu"></i> Otomatis
+                </button>
+            </div>
+
+            <div class="monitor-grid">
+                <div class="monitor-item">
+                    <span class="label-small">Tegangan Sistem</span>
+                    <span class="value-large" id="volt-val">0.0V</span>
+                    <i data-lucide="activity" size="14" style="color: var(--primary)"></i>
+                </div>
+                <div class="monitor-item">
+                    <div class="battery-visual">
+                        <div id="bat-fill" class="battery-level-fill"></div>
+                    </div>
+                    <span class="value-large" id="bat-percent">0%</span>
+                    <span class="label-small">Baterai</span>
+                </div>
+            </div>
+
+            <div class="load-section">
+                <div class="load-header">
+                    <i data-lucide="gauge" size="14"></i> Monitoring Beban Lampu
+                </div>
+                <div class="load-stats-grid">
+                    <div class="load-mini-card">
+                        <span class="load-val" id="load-volt">0V</span>
+                        <span class="load-lbl">Voltase</span>
+                    </div>
+                    <div class="load-mini-card">
+                        <span class="load-val" id="load-curr">0.0A</span>
+                        <span class="load-lbl">Arus</span>
+                    </div>
+                    <div class="load-mini-card">
+                        <span class="load-val" id="load-pow">0W</span>
+                        <span class="load-lbl">Daya</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="source-grid">
+                <div id="src-pln" class="source-btn" onclick="updateFirebase('sumber', 'PLN')">
+                    <i data-lucide="zap"></i>
+                    <span>PLN</span>
+                </div>
+                <div id="src-bat" class="source-btn" onclick="updateFirebase('sumber', 'Baterai')">
+                    <i data-lucide="battery"></i>
+                    <span>Baterai</span>
+                </div>
+            </div>
+
+            <div class="bulb-area">
+                <div id="aura" class="aura"></div>
+                <div id="bulb" class="bulb-icon">
+                    <i data-lucide="lightbulb" size="60"></i>
+                </div>
+                <div id="auto-indicator" class="auto-badge">DIKONTROL OLEH SISTEM</div>
+            </div>
+
+            <div class="action-grid">
+                <button id="ctrl-on" class="btn btn-on" onclick="updateFirebase('status', 'nyala')">
+                    <i data-lucide="power"></i> NYALA
+                </button>
+                <button id="ctrl-off" class="btn btn-off" onclick="updateFirebase('status', 'mati')">
+                    <i data-lucide="power-off"></i> MATI
+                </button>
+            </div>
+
+            <div class="footer">
+                <span id="log-status">Menunggu data...</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+    <script>
+        lucide.createIcons();
+
+        const config = {
+            apiKey: "AIzaSyAhIDwmw6YgWgTHb87xA6WNWMnno1WV7Oo",
+            authDomain: "monitoring-pju-hybrid.firebaseapp.com",
+            databaseURL: "https://monitoring-pju-hybrid-default-rtdb.firebaseio.com/",
+            projectId: "monitoring-pju-hybrid",
+            storageBucket: "monitoring-pju-hybrid.firebasestorage.app",
+            messagingSenderId: "41719442018",
+            appId: "1:41719442018:web:a62fcd6365edecf429bf3b"
+        };
+
+        firebase.initializeApp(config);
+        const db = firebase.database();
+
+        // 1. MONITOR KONEKSI
+        db.ref(".info/connected").on("value", (snap) => {
+            const dot = document.getElementById('net-dot');
+            const text = document.getElementById('net-text');
+            dot.style.background = snap.val() ? "var(--success)" : "var(--danger)";
+            text.innerText = snap.val() ? "ONLINE" : "OFFLINE";
+        });
+
+        // 2. FUNGSI KIRIM
+        function updateFirebase(key, value) {
+            db.ref("lampu").update({
+                [key]: value,
+                waktu_update: new Date().toLocaleTimeString('id-ID')
+            });
+        }
+
+        // 3. FUNGSI TERIMA & VISUALISASI
+        db.ref("lampu").on("value", (snapshot) => {
+            const data = snapshot.val();
+            if (!data) return;
+
+            // Update Mode (Manual/Otomatis)
+            const isAuto = data.kontrol_mode === 'otomatis';
+            document.getElementById('mode-manual').classList.toggle('active', !isAuto);
+            document.getElementById('mode-otomatis').classList.toggle('active', isAuto);
+            
+            // Disable tombol kontrol jika otomatis
+            document.getElementById('ctrl-on').disabled = isAuto;
+            document.getElementById('ctrl-off').disabled = isAuto;
+            document.getElementById('auto-indicator').style.display = isAuto ? 'block' : 'none';
+
+            // ======== MULAI PENAMBAHAN KODE ========
+            // Matikan tombol pilih sumber & beri efek pudar jika mode otomatis
+            document.getElementById('src-pln').style.pointerEvents = isAuto ? 'none' : 'auto';
+            document.getElementById('src-pln').style.opacity = isAuto ? '0.5' : '1';
+            document.getElementById('src-bat').style.pointerEvents = isAuto ? 'none' : 'auto';
+            document.getElementById('src-bat').style.opacity = isAuto ? '0.5' : '1';
+            // ======== SELESAI PENAMBAHAN KODE ========
+
+            // Update Lampu
+            const isNyala = data.status === 'nyala';
+            document.getElementById('bulb').className = isNyala ? 'bulb-icon active-bulb' : 'bulb-icon';
+            document.getElementById('aura').className = isNyala ? 'aura active-aura' : 'aura';
+
+            // Update Sumber
+            document.getElementById('src-pln').classList.toggle('active', data.sumber === 'PLN');
+            document.getElementById('src-bat').classList.toggle('active', data.sumber === 'Baterai');
+
+            // Update Tegangan & Baterai Sistem
+            const volt = data.tegangan || 0;
+            const percent = data.persentase_baterai || 0;
+            document.getElementById('volt-val').innerText = volt.toFixed(1) + "V";
+            document.getElementById('bat-percent').innerText = percent + "%";
+            const batFill = document.getElementById('bat-fill');
+            batFill.style.width = percent + "%";
+            if (percent > 60) batFill.style.background = "var(--success)";
+            else if (percent > 25) batFill.style.background = "var(--warning)";
+            else batFill.style.background = "var(--danger)";
+
+            // Update Monitoring Beban (Data dari Firebase)
+            const lVolt = data.beban_voltase || 0;
+            const lCurr = data.beban_arus || 0;
+            const lPow = data.beban_daya || 0;
+            
+            document.getElementById('load-volt').innerText = Math.round(lVolt) + "V";
+            document.getElementById('load-curr').innerText = lCurr.toFixed(2) + "A";
+            document.getElementById('load-pow').innerText = Math.round(lPow) + "W";
+
+            document.getElementById('log-status').innerText = "Update: " + (data.waktu_update || "-");
+        });
+    </script>
+</body>
+</html>
