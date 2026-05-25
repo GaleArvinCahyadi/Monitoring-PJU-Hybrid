@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Kontrol & Monitoring Energi</title>
+    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
@@ -337,6 +338,7 @@
                 <p style="color: var(--text-muted); font-size: 0.75rem;">Sistem Kontrol Terpadu</p>
             </div>
 
+            <!-- Mode Selector -->
             <div class="mode-selector">
                 <button id="mode-manual" class="mode-btn active" onclick="updateFirebase('kontrol_mode', 'manual')">
                     <i data-lucide="hand"></i> Manual
@@ -346,6 +348,7 @@
                 </button>
             </div>
 
+            <!-- Monitoring Tegangan & Baterai -->
             <div class="monitor-grid">
                 <div class="monitor-item">
                     <span class="label-small">Tegangan Sistem</span>
@@ -361,6 +364,7 @@
                 </div>
             </div>
 
+            <!-- Monitoring Beban -->
             <div class="load-section">
                 <div class="load-header">
                     <i data-lucide="gauge" size="14"></i> Monitoring Beban Lampu
@@ -381,6 +385,7 @@
                 </div>
             </div>
 
+            <!-- Pemilih Sumber -->
             <div class="source-grid">
                 <div id="src-pln" class="source-btn" onclick="updateFirebase('sumber', 'PLN')">
                     <i data-lucide="zap"></i>
@@ -392,6 +397,7 @@
                 </div>
             </div>
 
+            <!-- Visual Lampu -->
             <div class="bulb-area">
                 <div id="aura" class="aura"></div>
                 <div id="bulb" class="bulb-icon">
@@ -400,6 +406,7 @@
                 <div id="auto-indicator" class="auto-badge">DIKONTROL OLEH SISTEM</div>
             </div>
 
+            <!-- Kontrol -->
             <div class="action-grid">
                 <button id="ctrl-on" class="btn btn-on" onclick="updateFirebase('status', 'nyala')">
                     <i data-lucide="power"></i> NYALA
@@ -465,14 +472,6 @@
             document.getElementById('ctrl-off').disabled = isAuto;
             document.getElementById('auto-indicator').style.display = isAuto ? 'block' : 'none';
 
-            // ======== MULAI PENAMBAHAN KODE ========
-            // Matikan tombol pilih sumber & beri efek pudar jika mode otomatis
-            document.getElementById('src-pln').style.pointerEvents = isAuto ? 'none' : 'auto';
-            document.getElementById('src-pln').style.opacity = isAuto ? '0.5' : '1';
-            document.getElementById('src-bat').style.pointerEvents = isAuto ? 'none' : 'auto';
-            document.getElementById('src-bat').style.opacity = isAuto ? '0.5' : '1';
-            // ======== SELESAI PENAMBAHAN KODE ========
-
             // Update Lampu
             const isNyala = data.status === 'nyala';
             document.getElementById('bulb').className = isNyala ? 'bulb-icon active-bulb' : 'bulb-icon';
@@ -482,26 +481,29 @@
             document.getElementById('src-pln').classList.toggle('active', data.sumber === 'PLN');
             document.getElementById('src-bat').classList.toggle('active', data.sumber === 'Baterai');
 
-            // Update Tegangan & Baterai Sistem
-            const volt = data.tegangan || 0;
-            const percent = data.persentase_baterai || 0;
+            // --- PERBAIKAN: Konversi data string dari Firebase menjadi angka menggunakan parseFloat() ---
+            const volt = parseFloat(data.tegangan) || 0;
+            const percent = parseFloat(data.persentase_baterai) || 0;
+            
             document.getElementById('volt-val').innerText = volt.toFixed(1) + "V";
-            document.getElementById('bat-percent').innerText = percent + "%";
+            document.getElementById('bat-percent').innerText = Math.round(percent) + "%";
+            
             const batFill = document.getElementById('bat-fill');
             batFill.style.width = percent + "%";
             if (percent > 60) batFill.style.background = "var(--success)";
             else if (percent > 25) batFill.style.background = "var(--warning)";
             else batFill.style.background = "var(--danger)";
 
-            // Update Monitoring Beban (Data dari Firebase)
-            const lVolt = data.beban_voltase || 0;
-            const lCurr = data.beban_arus || 0;
-            const lPow = data.beban_daya || 0;
+            // --- PERBAIKAN: Konversi beban dari string ke angka sebelum diformat ---
+            const lVolt = parseFloat(data.beban_voltase) || 0;
+            const lCurr = parseFloat(data.beban_arus) || 0;
+            const lPow = parseFloat(data.beban_daya) || 0;
             
-            document.getElementById('load-volt').innerText = Math.round(lVolt) + "V";
+            document.getElementById('load-volt').innerText = lVolt.toFixed(1) + "V";
             document.getElementById('load-curr').innerText = lCurr.toFixed(2) + "A";
-            document.getElementById('load-pow').innerText = Math.round(lPow) + "W";
+            document.getElementById('load-pow').innerText = lPow.toFixed(1) + "W";
 
+            // Status ini sekarang akan berhasil ter-update karena JavaScript tidak lagi mengalami error crash di atasnya!
             document.getElementById('log-status').innerText = "Update: " + (data.waktu_update || "-");
         });
     </script>
